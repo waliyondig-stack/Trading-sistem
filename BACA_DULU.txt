@@ -1,0 +1,20 @@
+CARA DEPLOY KE VERCEL (sekali saja, ±5 menit)
+=============================================
+CARA A — Lewat GitHub (tanpa install apa pun):
+1. Buat akun github.com (gratis) -> New Repository (nama bebas, Public/Private)
+2. Klik "uploading an existing file" -> seret SEMUA file di folder ini -> Commit
+3. Buat akun vercel.com (gratis, login pakai GitHub)
+4. Vercel -> Add New -> Project -> Import repo tadi -> Deploy
+5. Selesai. URL kamu: https://namaproject.vercel.app
+
+CARA B — Lewat CLI (kalau PC ada Node.js):
+1. Buka terminal di folder ini
+2. npx vercel login   (ikuti login)
+3. npx vercel --prod  (jawab enter-enter saja)
+4. URL muncul di layar.
+
+SETELAH ONLINE:
+- Buka URL dari HP -> menu browser -> "Add to Home Screen" -> jadi seperti aplikasi.
+- Aktifkan Sinkronisasi Cloud di tab Pengaturan (jsonbin.io) SEKALI di tiap perangkat
+  dengan Bin ID + Key yang sama -> jurnal & posisi otomatis sama di semua perangkat.
+- Update versi ke depannya: timpa index.html di GitHub -> Vercel auto-deploy ulang.
