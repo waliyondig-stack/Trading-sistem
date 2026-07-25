@@ -38,6 +38,19 @@ model Tenant {
   auditLogs     AuditLog[]
   outboxEvents  OutboxEvent[]
 
+  // Fase 2 — Catalog & Customer
+  categories         Category[]
+  products           Product[]
+  productVariants    ProductVariant[]
+  channels           Channel[]
+  channelListings    ChannelListing[]
+  catalogImportJobs  CatalogImportJob[]
+  customers          Customer[]
+  customerIdentities CustomerIdentity[]
+  customerAddresses  CustomerAddress[]
+  mergeCandidates    CustomerMergeCandidate[]
+  mergeHistories     CustomerMergeHistory[]
+
   @@index([status])
 }
 
@@ -248,4 +261,388 @@ model OutboxEvent {
   tenant Tenant? @relation(fields: [tenantId], references: [id])
 
   @@index([status, createdAt])
+}
+
+// =====================================================================
+// FASE 2 — Catalog, Channel Listing, Customer Master Data
+// =====================================================================
+
+// ------------------------- Catalog -------------------------
+
+enum CatalogStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProductType {
+  PHYSICAL
+  SERVICE
+  DIGITAL
+  BUNDLE // placeholder — bundle belum diimplementasikan penuh
+}
+
+model Category {
+  id               String        @id @default(uuid()) @db.Uuid
+  tenantId         String        @db.Uuid
+  parentCategoryId String?       @db.Uuid
+  name             String
+  slug             String
+  description      String?
+  status           CatalogStatus @default(ACTIVE)
+  sortOrder        Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  deletedAt        DateTime?
+  createdBy        String?       @db.Uuid
+  updatedBy        String?       @db.Uuid
+
+  tenant   Tenant     @relation(fields: [tenantId], references: [id])
+  parent   Category?  @relation("CategoryTree", fields: [parentCategoryId], references: [id])
+  children Category[] @relation("CategoryTree")
+  products Product[]
+
+  // Catatan: unique NULL parent (root) ditegakkan tambahan di service.
+  @@unique([tenantId, parentCategoryId, slug])
+  @@index([tenantId])
+  @@index([tenantId, parentCategoryId])
+}
+
+model Product {
+  id          String        @id @default(uuid()) @db.Uuid
+  tenantId    String        @db.Uuid
+  categoryId  String?       @db.Uuid
+  name        String
+  slug        String
+  description String?
+  productType ProductType   @default(PHYSICAL)
+  brand       String?
+  status      CatalogStatus @default(ACTIVE)
+  taxCategory String?
+  defaultUnit String        @default("pcs")
+  tags        String[]      @default([])
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+  createdBy   String?       @db.Uuid
+  updatedBy   String?       @db.Uuid
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id])
+  category Category?        @relation(fields: [categoryId], references: [id])
+  variants ProductVariant[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, status])
+  @@index([tenantId, name])
+}
+
+model ProductVariant {
+  id           String        @id @default(uuid()) @db.Uuid
+  tenantId     String        @db.Uuid
+  productId    String        @db.Uuid
+  name         String
+  internalSku  String
+  barcode      String?
+  attributes   Json?
+  unit         String        @default("pcs")
+  // Uang: integer rupiah (BigInt) — bukan floating point.
+  costAmount   BigInt        @default(0)
+  sellingPrice BigInt        @default(0)
+  currency     String        @default("IDR")
+  weightGrams  Int?
+  dimensions   Json?
+  status       CatalogStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+  createdBy    String?       @db.Uuid
+  updatedBy    String?       @db.Uuid
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id])
+  product  Product          @relation(fields: [productId], references: [id])
+  listings ChannelListing[]
+
+  @@unique([tenantId, internalSku])
+  @@unique([tenantId, barcode])
+  @@index([tenantId])
+  @@index([tenantId, productId])
+}
+
+// ------------------------- Channel & Listing -------------------------
+
+enum ChannelType {
+  MANUAL
+  POS
+  CSV
+  MOCK_MARKETPLACE
+  WEBSITE
+  WHATSAPP_PLACEHOLDER
+}
+
+model Channel {
+  id            String        @id @default(uuid()) @db.Uuid
+  tenantId      String        @db.Uuid
+  type          ChannelType
+  name          String
+  status        CatalogStatus @default(ACTIVE)
+  // Metadata non-secret saja (jangan simpan kredensial di sini).
+  configuration Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  tenant             Tenant             @relation(fields: [tenantId], references: [id])
+  listings           ChannelListing[]
+  customerIdentities CustomerIdentity[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+enum SyncStatus {
+  NOT_APPLICABLE
+  PENDING
+  SYNCED
+  FAILED
+}
+
+model ChannelListing {
+  id                    String        @id @default(uuid()) @db.Uuid
+  tenantId              String        @db.Uuid
+  channelId             String        @db.Uuid
+  productVariantId      String        @db.Uuid
+  externalProductId     String?
+  externalVariantId     String?
+  externalSku           String
+  listingName           String
+  listingStatus         ListingStatus @default(ACTIVE)
+  channelPrice          BigInt?
+  synchronizationStatus SyncStatus    @default(NOT_APPLICABLE)
+  lastSyncedAt          DateTime?
+  metadata              Json?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id])
+  channel Channel        @relation(fields: [channelId], references: [id])
+  variant ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  // Satu external SKU dalam satu channel tidak boleh menunjuk dua variant.
+  @@unique([tenantId, channelId, externalSku])
+  @@index([tenantId])
+  @@index([tenantId, productVariantId])
+  @@index([tenantId, externalSku])
+}
+
+// ------------------------- CSV Import -------------------------
+
+enum ImportJobStatus {
+  PREVIEWED
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model CatalogImportJob {
+  id             String          @id @default(uuid()) @db.Uuid
+  tenantId       String          @db.Uuid
+  fileName       String
+  status         ImportJobStatus @default(PREVIEWED)
+  columnMapping  Json?
+  rawContent     String
+  totalRows      Int             @default(0)
+  createdRows    Int             @default(0)
+  updatedRows    Int             @default(0)
+  failedRows     Int             @default(0)
+  skippedRows    Int             @default(0)
+  rowErrors      Json?
+  previewResult  Json?
+  idempotencyKey String?
+  errorMessage   String?
+  createdBy      String?         @db.Uuid
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  startedAt      DateTime?
+  finishedAt     DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, createdAt])
+}
+
+// ------------------------- Customer / CRM -------------------------
+
+enum CustomerType {
+  INDIVIDUAL
+  BUSINESS
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  MERGED
+}
+
+enum ConsentStatus {
+  UNKNOWN
+  OPTED_IN
+  OPTED_OUT
+}
+
+model Customer {
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String         @db.Uuid
+  type              CustomerType   @default(INDIVIDUAL)
+  displayName       String
+  firstName         String?
+  lastName          String?
+  companyName       String?
+  primaryPhone      String? // ternormalisasi (+62…)
+  primaryEmail      String? // ternormalisasi (lowercase)
+  status            CustomerStatus @default(ACTIVE)
+  notes             String?
+  tags              String[]       @default([])
+  consentStatus     ConsentStatus  @default(UNKNOWN)
+  preferredLanguage String         @default("id")
+  preferredChannel  String?
+  // Bila status MERGED, menunjuk ke customer target hasil merge.
+  mergedIntoId      String?        @db.Uuid
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+  createdBy         String?        @db.Uuid
+  updatedBy         String?        @db.Uuid
+
+  tenant        Tenant                   @relation(fields: [tenantId], references: [id])
+  mergedInto    Customer?                @relation("CustomerMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom    Customer[]               @relation("CustomerMerge")
+  identities    CustomerIdentity[]
+  addresses     CustomerAddress[]
+  candidatesAsA CustomerMergeCandidate[] @relation("CandidateA")
+  candidatesAsB CustomerMergeCandidate[] @relation("CandidateB")
+  mergeAsSource CustomerMergeHistory[]   @relation("MergeSource")
+  mergeAsTarget CustomerMergeHistory[]   @relation("MergeTarget")
+
+  @@index([tenantId])
+  @@index([tenantId, displayName])
+  @@index([tenantId, primaryPhone])
+  @@index([tenantId, primaryEmail])
+  @@index([tenantId, status])
+}
+
+enum IdentityType {
+  PHONE
+  EMAIL
+  MARKETPLACE_ACCOUNT
+  WHATSAPP
+  MANUAL_REFERENCE
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  VERIFIED
+}
+
+model CustomerIdentity {
+  id                 String             @id @default(uuid()) @db.Uuid
+  tenantId           String             @db.Uuid
+  customerId         String             @db.Uuid
+  identityType       IdentityType
+  channelId          String?            @db.Uuid
+  externalId         String?
+  normalizedValue    String
+  displayValue       String
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  isPrimary          Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  channel  Channel? @relation(fields: [channelId], references: [id])
+
+  // Keunikan identity terverifikasi lintas customer aktif ditegakkan di service
+  // (butuh pengecualian customer MERGED — tidak bisa dengan unique index penuh).
+  @@index([tenantId, identityType, normalizedValue])
+  @@index([tenantId, customerId])
+}
+
+model CustomerAddress {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  customerId    String   @db.Uuid
+  label         String   @default("Utama")
+  recipientName String
+  phone         String?
+  addressLine   String
+  village       String?
+  district      String?
+  city          String
+  province      String
+  postalCode    String?
+  country       String   @default("ID")
+  latitude      Decimal? @db.Decimal(9, 6)
+  longitude     Decimal? @db.Decimal(9, 6)
+  isPrimary     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId, customerId])
+}
+
+enum MergeCandidateStatus {
+  PENDING
+  CONFIRMED_DUPLICATE
+  REJECTED
+  IGNORED
+}
+
+model CustomerMergeCandidate {
+  id          String               @id @default(uuid()) @db.Uuid
+  tenantId    String               @db.Uuid
+  customerAId String               @db.Uuid
+  customerBId String               @db.Uuid
+  score       Int
+  reasons     Json
+  status      MergeCandidateStatus @default(PENDING)
+  reviewedBy  String?              @db.Uuid
+  reviewedAt  DateTime?
+  createdAt   DateTime             @default(now())
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  customerA Customer @relation("CandidateA", fields: [customerAId], references: [id])
+  customerB Customer @relation("CandidateB", fields: [customerBId], references: [id])
+
+  @@unique([tenantId, customerAId, customerBId])
+  @@index([tenantId, status])
+}
+
+model CustomerMergeHistory {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @db.Uuid
+  sourceCustomerId String   @db.Uuid
+  targetCustomerId String   @db.Uuid
+  snapshotBefore   Json
+  mergeStrategy    Json
+  performedBy      String   @db.Uuid
+  performedAt      DateTime @default(now())
+  reason           String
+
+  tenant Tenant   @relation(fields: [tenantId], references: [id])
+  source Customer @relation("MergeSource", fields: [sourceCustomerId], references: [id])
+  target Customer @relation("MergeTarget", fields: [targetCustomerId], references: [id])
+
+  @@index([tenantId, performedAt])
 }

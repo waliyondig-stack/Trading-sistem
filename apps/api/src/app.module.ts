@@ -12,9 +12,12 @@ import { TenantModule } from './tenant/tenant.module';
 import { BranchModule } from './branch/branch.module';
 import { WarehouseModule } from './warehouse/warehouse.module';
 import { MemberModule } from './member/member.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { CustomerModule } from './customer/customer.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { CsrfGuard } from './auth/csrf.guard';
 import { AccessGuard } from './access/access.guard';
 import { GlobalExceptionFilter } from './common/http-exception.filter';
 import { correlationIdMiddleware } from './common/correlation-id.middleware';
@@ -41,14 +44,17 @@ import { envConfig } from './config/env';
     BranchModule,
     WarehouseModule,
     MemberModule,
+    CatalogModule,
+    CustomerModule,
     DashboardModule,
     HealthModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
-    // Urutan guard penting: throttling → autentikasi → otorisasi (default deny).
+    // Urutan guard penting: throttling → autentikasi → CSRF → otorisasi (default deny).
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: CsrfGuard },
     { provide: APP_GUARD, useClass: AccessGuard },
   ],
 })

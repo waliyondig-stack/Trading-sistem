@@ -16,3 +16,14 @@ Dokumen ini mencatat asumsi yang diambil selama pengembangan. Setiap asumsi baru
 10. **Playwright E2E belum ada di Fase 1.** Critical flow tercakup integration test API (supertest). E2E browser ditambahkan mulai Fase 2 ketika ada alur UI bisnis nyata (lihat known limitations di laporan fase).
 11. **Bahasa**: UI dan pesan error berbahasa Indonesia; struktur i18n formal (kamus terjemahan) ditambahkan saat ada kebutuhan bahasa kedua.
 12. **Zona waktu**: penyimpanan UTC; tampilan default `Asia/Jakarta` dengan `Intl` id-ID.
+
+## Fase 2 (Catalog & Customer)
+
+13. **(Menggantikan #5)** Session web kini memakai cookie httpOnly + CSRF double-submit (ADR-005). Yang tersisa di localStorage hanya `tenantId` aktif (bukan rahasia).
+14. **Worker import berjalan di dalam proses API** (BullMQ Worker di `CatalogModule`), bukan `apps/worker`, agar logika import tetap dalam bounded context Catalog tanpa duplikasi. `apps/worker` tetap untuk outbox/domain-events. Di lingkungan test, job diproses inline agar deterministik.
+15. **File import disimpan sebagai teks di kolom database** (`CatalogImportJob.rawContent`), bukan object storage — memadai untuk batas 2 MB; migrasi ke MinIO/S3 menyusul.
+16. **Model `Channel` dimiliki modul Catalog sementara** sampai Integration Hub (Fase 5) dibangun; hanya metadata non-secret yang boleh disimpan di `configuration`.
+17. **Harga variant di API** dikirim sebagai number JSON (aman ≤ 2^53) meski disimpan `BigInt` integer rupiah.
+18. **Merge menghapus baris identity source yang duplikat persis** dengan milik target (nilai tetap terekam di `snapshotBefore`); customer source sendiri tidak pernah dihapus (status `MERGED`).
+19. **Deteksi duplikat berjalan sinkron** setelah mutasi pelanggan (query terarah berdasarkan sinyal kuat) — cukup untuk skala MVP; dipindah ke job asinkron bila volume besar.
+20. **Backfill permission tenant lama**: role sistem tenant yang dibuat sebelum Fase 2 tidak otomatis mendapat permission baru (dev memakai reset+seed; script backfill dicatat sebagai technical debt).

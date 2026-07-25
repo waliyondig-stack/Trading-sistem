@@ -30,6 +30,13 @@ Semua baris data bisnis membawa `tenantId` yang tidak ambigu.
 
 Test ini adalah acceptance test wajib; **CI gagal bila isolasi bocor**.
 
+Cakupan Fase 2 (`catalog.e2e-spec.ts`, `import.e2e-spec.ts`, `customer.e2e-spec.ts`):
+
+- Tenant B tidak melihat kategori/produk/SKU/pelanggan/kandidat-merge Tenant A.
+- Tenant B tidak dapat menjalankan merge pada pelanggan Tenant A (404, data tidak berubah).
+- SKU sama boleh dipakai tenant berbeda (unique constraint per tenant), dan import Tenant A tidak pernah mengubah produk Tenant B meski SKU-nya sama.
+- Job import + error report hanya terlihat oleh tenant pemiliknya.
+
 ## Aturan untuk kode baru
 
 - Model Prisma baru wajib `tenantId` + index, kecuali entitas global yang disepakati (`User`, `Permission`).

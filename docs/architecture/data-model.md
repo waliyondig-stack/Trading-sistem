@@ -48,7 +48,39 @@ erDiagram
 
 Constraint penting Fase 1: `Tenant.slug` unique; `Branch/Warehouse (tenantId, code)` unique; `Membership (tenantId, userId)` unique; `Role (tenantId, name)` unique; index `AuditLog (tenantId, createdAt)` dan `(tenantId, entityType, entityId)`; index `OutboxEvent (status, createdAt)`.
 
-## ERD — Target MVP (Fase 2–6)
+## ERD — Fase 2 (implemented)
+
+```mermaid
+erDiagram
+  Category ||--o{ Category : "parent-child"
+  Category ||--o{ Product : classifies
+  Product ||--o{ ProductVariant : has
+  Channel ||--o{ ChannelListing : lists
+  ProductVariant ||--o{ ChannelListing : "mapped as"
+  Tenant ||--o{ CatalogImportJob : imports
+  Customer ||--o{ CustomerIdentity : "channel identity"
+  Customer ||--o{ CustomerAddress : addresses
+  Channel ||--o{ CustomerIdentity : "optional origin"
+  Customer ||--o{ CustomerMergeCandidate : "pair A/B"
+  Customer ||--o{ CustomerMergeHistory : "source/target"
+  Customer ||--o| Customer : "mergedInto"
+
+  Product { uuid id PK  uuid tenantId  string slug  enum productType  enum status  string[] tags }
+  ProductVariant { uuid id PK  uuid tenantId  string internalSku UK  string barcode UK  bigint costAmount  bigint sellingPrice  string currency }
+  Category { uuid id PK  uuid tenantId  uuid parentCategoryId FK  string slug  int sortOrder }
+  Channel { uuid id PK  uuid tenantId  enum type  string name }
+  ChannelListing { uuid id PK  uuid tenantId  uuid channelId FK  uuid productVariantId FK  string externalSku  bigint channelPrice }
+  CatalogImportJob { uuid id PK  uuid tenantId  enum status  int createdRows  int updatedRows  int failedRows  json rowErrors  string idempotencyKey }
+  Customer { uuid id PK  uuid tenantId  enum type  enum status  string primaryPhone  string primaryEmail  uuid mergedIntoId }
+  CustomerIdentity { uuid id PK  uuid tenantId  uuid customerId FK  enum identityType  string normalizedValue  enum verificationStatus }
+  CustomerAddress { uuid id PK  uuid tenantId  uuid customerId FK  string city  string province  bool isPrimary }
+  CustomerMergeCandidate { uuid id PK  uuid tenantId  int score  json reasons  enum status }
+  CustomerMergeHistory { uuid id PK  uuid tenantId  json snapshotBefore  json mergeStrategy  string reason }
+```
+
+Constraint kunci Fase 2: `ProductVariant (tenantId, internalSku)` & `(tenantId, barcode)` unique; `Product (tenantId, slug)` unique; `Category (tenantId, parentCategoryId, slug)` unique (root ditegakkan di service); `ChannelListing (tenantId, channelId, externalSku)` unique (anti mapping ambigu); `CustomerMergeCandidate (tenantId, customerAId, customerBId)` unique (pasangan terurut); `CatalogImportJob (tenantId, idempotencyKey)` unique. Uang: `BigInt` integer rupiah.
+
+## ERD — Target MVP (Fase 3–6)
 
 ```mermaid
 erDiagram

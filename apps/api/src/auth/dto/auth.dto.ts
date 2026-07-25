@@ -1,5 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty({ example: 'pemilik@tokosaya.id' })
@@ -48,8 +56,11 @@ export class LoginDto {
 }
 
 export class RefreshDto {
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description: 'Opsional untuk klien API; session web memakai cookie httpOnly.',
+  })
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  refreshToken!: string;
+  refreshToken?: string;
 }

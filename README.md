@@ -4,9 +4,9 @@
 
 > "FlowNiaga" adalah nama kerja. Seluruh identitas merek diganti lewat environment variable (`APP_NAME`, `NEXT_PUBLIC_APP_NAME`) tanpa mengubah logika aplikasi — lihat `packages/config`.
 
-## Status: Fase 1 — Foundation ✅
+## Status: Fase 2 — Catalog & Customer ✅ (Fase 1 Foundation ✅)
 
-Yang sudah tersedia:
+Fase 1 — Foundation:
 
 - Monorepo pnpm (apps: `api`, `web`, `worker`; packages: `config`, `domain`, `ui`).
 - Autentikasi (register/login/refresh-rotation/logout, scrypt + JWT).
@@ -14,9 +14,16 @@ Yang sudah tersedia:
 - RBAC granular dengan **default deny** di backend + branch scope.
 - Audit log untuk seluruh critical action (termasuk percobaan akses lintas tenant).
 - Transactional outbox + worker dispatcher (BullMQ).
-- Dashboard shell berbahasa Indonesia (PWA, mobile-first).
 - OpenAPI/Swagger di `/docs`, health check, structured logging + correlation ID.
-- Test: unit + integration (isolasi tenant, RBAC, auth) — semua hijau.
+
+Fase 2 — Catalog & Customer:
+
+- **Session web aman (ADR-005)**: cookie httpOnly + SameSite=Lax + CSRF double-submit — tidak ada token di localStorage.
+- **Catalog**: kategori bertingkat (anti-circular), produk + variasi, SKU & barcode unik per tenant, harga integer rupiah (BigInt), kanal + **channel listing** (mapping SKU eksternal → variant, anti-ambigu, deteksi SKU belum terpetakan).
+- **CSV import produk**: upload → preview + error per baris → konfirmasi → worker BullMQ idempotent → hasil (dibuat/diperbarui/gagal/dilewati) + error report CSV (aman dari formula injection). Template: `docs/examples/product-import-template.csv`.
+- **Customer/CRM**: pelanggan + identitas multi-kanal (telepon/email dinormalisasi), alamat, **deteksi duplikat deterministik** (skor + alasan tersimpan), **manual merge** dengan preview, permission khusus, transaksi atomic, merge history + audit.
+- Halaman web: Produk (list/buat/detail/variant/mapping/import wizard) & Pelanggan (list/buat/detail/duplikat/merge) — Bahasa Indonesia, dengan loading/empty/error/unauthorized state.
+- Test: 25 unit + 56 integration + 6 Playwright E2E — semua hijau.
 
 Roadmap lengkap: [docs/product/roadmap.md](docs/product/roadmap.md).
 
@@ -84,6 +91,7 @@ Seed membuat tenant **PT Demo Flow Niaga** (2 cabang, 2 gudang) dengan akun beri
 | `pnpm typecheck`        | Type-check seluruh workspace         |
 | `pnpm test`             | Unit test seluruh workspace          |
 | `pnpm test:integration` | Integration test API (butuh DB test) |
+| `pnpm test:e2e`         | Playwright E2E (butuh DB dev + seed) |
 | `pnpm build`            | Build seluruh workspace              |
 | `pnpm db:migrate`       | Terapkan migration (deploy)          |
 | `pnpm db:seed`          | Seed data demo                       |

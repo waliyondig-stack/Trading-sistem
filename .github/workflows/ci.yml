@@ -80,5 +80,13 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Install browser Playwright
+        run: pnpm --filter @flowniaga/web exec playwright install chromium --with-deps
+
+      - name: E2E Playwright
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+        run: pnpm test:e2e
+
       - name: Dependency audit (informasional)
         run: pnpm audit --audit-level high || true

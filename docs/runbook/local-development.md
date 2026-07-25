@@ -30,9 +30,17 @@ pnpm dev:worker   # outbox dispatcher (opsional)
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration && pnpm build
+pnpm test:e2e   # Playwright — butuh DB dev ter-migrate + ter-seed
 ```
 
 Integration test memakai `DATABASE_URL_TEST` (database terpisah, dimigrasi otomatis oleh global setup Jest; fixture memakai identitas acak sehingga aman dijalankan berulang).
+
+E2E Playwright (`apps/web/e2e`) menyalakan API + Web otomatis (webServer), memakai akun demo `owner@demo.flowniaga.local` — jalankan `pnpm db:seed` dulu. Browser Chromium harus tersedia (`npx playwright install chromium` bila belum).
+
+## Mencoba fitur Fase 2
+
+- **CSV import**: menu Produk → Import CSV → unggah `docs/examples/product-import-template.csv` → periksa preview → Konfirmasi → lihat hasil & unduh error report. Dokumentasi: `docs/catalog/csv-import.md`.
+- **Customer merge**: menu Pelanggan → Kandidat Duplikat (seed menyediakan 2 kandidat: Budi & Siti) → Tinjau & Merge → pilih master → Preview → isi alasan → Konfirmasi. Dokumentasi: `docs/customer/customer-merge.md`.
 
 ## Masalah umum
 

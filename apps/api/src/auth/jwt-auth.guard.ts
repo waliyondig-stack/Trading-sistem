@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../common/decorators';
 import { envConfig } from '../config/env';
+import { ACCESS_COOKIE } from './session-cookies';
 
 interface AccessTokenPayload {
   sub: string;
@@ -28,10 +29,18 @@ export class JwtAuthGuard implements CanActivate {
 
     const req = context.switchToHttp().getRequest<Request>();
     const header = req.headers.authorization;
-    if (!header?.startsWith('Bearer ')) {
+    let token: string | undefined;
+    if (header?.startsWith('Bearer ')) {
+      token = header.slice('Bearer '.length);
+      req.authVia = 'bearer';
+    } else {
+      // Session web: access token dari cookie httpOnly (ADR-005).
+      token = (req.cookies as Record<string, string> | undefined)?.[ACCESS_COOKIE];
+      req.authVia = 'cookie';
+    }
+    if (!token) {
       throw new UnauthorizedException({ code: 'UNAUTHORIZED', message: 'Token tidak ditemukan.' });
     }
-    const token = header.slice('Bearer '.length);
     try {
       const payload = await this.jwtService.verifyAsync<AccessTokenPayload>(token, {
         secret: envConfig().jwtAccessSecret,

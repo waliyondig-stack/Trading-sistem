@@ -32,10 +32,13 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm test:integration   # butuh PostgreSQL test (DATABASE_URL_TEST)
+pnpm test:e2e           # Playwright — butuh DB dev ter-migrate + ter-seed
 pnpm build
 pnpm db:migrate         # harus jalan dari database kosong
 pnpm db:seed
 ```
+
+Catatan Fase 2: session web memakai cookie httpOnly + CSRF double-submit (ADR-005) — jangan pernah menyimpan token di localStorage; klien API memakai Bearer. Strategi test lengkap: `docs/test-strategy.md`.
 
 ## Konvensi kode
 

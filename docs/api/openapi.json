@@ -94,7 +94,7 @@
             "description": ""
           }
         },
-        "summary": "Masuk dengan email dan kata sandi",
+        "summary": "Masuk — session di cookie httpOnly; body juga memuat token untuk klien API",
         "tags": ["auth"]
       }
     },
@@ -128,7 +128,7 @@
             "description": ""
           }
         },
-        "summary": "Tukar refresh token dengan access token baru (rotasi)",
+        "summary": "Rotasi refresh token (dari cookie httpOnly atau body)",
         "tags": ["auth"]
       }
     },
@@ -167,7 +167,7 @@
             "bearer": []
           }
         ],
-        "summary": "Keluar (mencabut refresh token)",
+        "summary": "Keluar — mencabut refresh token dan menghapus session cookie",
         "tags": ["auth"]
       }
     },
@@ -803,6 +803,1705 @@
         "tags": ["members"]
       }
     },
+    "/categories": {
+      "get": {
+        "operationId": "CategoryController_list",
+        "parameters": [
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Daftar kategori (flat)",
+        "tags": ["catalog-categories"]
+      },
+      "post": {
+        "operationId": "CategoryController_create",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buat kategori",
+        "tags": ["catalog-categories"]
+      }
+    },
+    "/categories/tree": {
+      "get": {
+        "operationId": "CategoryController_tree",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tree kategori (nested)",
+        "tags": ["catalog-categories"]
+      }
+    },
+    "/categories/{id}": {
+      "get": {
+        "operationId": "CategoryController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detail kategori",
+        "tags": ["catalog-categories"]
+      },
+      "patch": {
+        "operationId": "CategoryController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubah kategori",
+        "tags": ["catalog-categories"]
+      },
+      "delete": {
+        "operationId": "CategoryController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Arsipkan kategori (soft delete)",
+        "tags": ["catalog-categories"]
+      }
+    },
+    "/products": {
+      "get": {
+        "operationId": "ProductController_list",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Cari pada nama/slug/SKU",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["ACTIVE", "INACTIVE"]
+            }
+          },
+          {
+            "name": "productType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["PHYSICAL", "SERVICE", "DIGITAL", "BUNDLE"]
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "name",
+              "type": "string",
+              "enum": ["name", "createdAt", "updatedAt"]
+            }
+          },
+          {
+            "name": "sortDir",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "asc",
+              "type": "string",
+              "enum": ["asc", "desc"]
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Daftar produk (filter, cari, pagination, sorting)",
+        "tags": ["catalog-products"]
+      },
+      "post": {
+        "operationId": "ProductController_create",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buat produk (opsional beserta variasi awal)",
+        "tags": ["catalog-products"]
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "operationId": "ProductController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detail produk beserta variasi",
+        "tags": ["catalog-products"]
+      },
+      "patch": {
+        "operationId": "ProductController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubah produk",
+        "tags": ["catalog-products"]
+      },
+      "delete": {
+        "operationId": "ProductController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Arsipkan produk (soft delete)",
+        "tags": ["catalog-products"]
+      }
+    },
+    "/products/{id}/variants": {
+      "post": {
+        "operationId": "ProductController_addVariants",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tambah satu/banyak variasi ke produk",
+        "tags": ["catalog-products"]
+      }
+    },
+    "/variants/lookup": {
+      "get": {
+        "operationId": "VariantController_lookup",
+        "parameters": [
+          {
+            "name": "sku",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cari variasi berdasarkan SKU internal atau barcode",
+        "tags": ["catalog-variants"]
+      }
+    },
+    "/variants/{id}": {
+      "patch": {
+        "operationId": "VariantController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVariantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubah variasi (harga, status, atribut)",
+        "tags": ["catalog-variants"]
+      },
+      "delete": {
+        "operationId": "VariantController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Arsipkan variasi (soft delete)",
+        "tags": ["catalog-variants"]
+      }
+    },
+    "/channels": {
+      "get": {
+        "operationId": "ChannelController_list",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Daftar kanal tenant",
+        "tags": ["catalog-channels"]
+      },
+      "post": {
+        "operationId": "ChannelController_create",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChannelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buat kanal (manual/pos/csv/mock — tanpa integrasi nyata)",
+        "tags": ["catalog-channels"]
+      }
+    },
+    "/channels/{id}": {
+      "patch": {
+        "operationId": "ChannelController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChannelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubah kanal",
+        "tags": ["catalog-channels"]
+      }
+    },
+    "/channel-listings": {
+      "get": {
+        "operationId": "ListingController_list",
+        "parameters": [
+          {
+            "name": "channelId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productVariantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Cari external SKU / nama listing",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Daftar pemetaan listing kanal",
+        "tags": ["catalog-channel-listings"]
+      },
+      "post": {
+        "operationId": "ListingController_create",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buat pemetaan listing manual",
+        "tags": ["catalog-channel-listings"]
+      }
+    },
+    "/channel-listings/resolve": {
+      "get": {
+        "operationId": "ListingController_resolve",
+        "parameters": [
+          {
+            "name": "channelId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "externalSku",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cari variasi dari external SKU pada kanal",
+        "tags": ["catalog-channel-listings"]
+      }
+    },
+    "/channel-listings/resolve-unmapped": {
+      "post": {
+        "operationId": "ListingController_resolveUnmapped",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveUnmappedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deteksi external SKU yang belum terpetakan (batch)",
+        "tags": ["catalog-channel-listings"]
+      }
+    },
+    "/channel-listings/{id}": {
+      "patch": {
+        "operationId": "ListingController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubah pemetaan listing",
+        "tags": ["catalog-channel-listings"]
+      }
+    },
+    "/catalog-imports": {
+      "post": {
+        "operationId": "ImportController_upload",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unggah CSV produk dan dapatkan preview (belum menyimpan data)",
+        "tags": ["catalog-import"]
+      },
+      "get": {
+        "operationId": "ImportController_list",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Daftar job import terakhir",
+        "tags": ["catalog-import"]
+      }
+    },
+    "/catalog-imports/{id}": {
+      "get": {
+        "operationId": "ImportController_status",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Status/progress job import",
+        "tags": ["catalog-import"]
+      }
+    },
+    "/catalog-imports/{id}/confirm": {
+      "post": {
+        "operationId": "ImportController_confirm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Konfirmasi import (idempotent — header Idempotency-Key opsional)",
+        "tags": ["catalog-import"]
+      }
+    },
+    "/catalog-imports/{id}/errors.csv": {
+      "get": {
+        "operationId": "ImportController_errorReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unduh error report per baris (CSV, aman dari formula injection)",
+        "tags": ["catalog-import"]
+      }
+    },
+    "/customers": {
+      "get": {
+        "operationId": "CustomerController_list",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Cari nama/telepon/email",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["INDIVIDUAL", "BUSINESS"]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["ACTIVE", "INACTIVE", "MERGED"]
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "displayName",
+              "type": "string",
+              "enum": ["displayName", "createdAt", "updatedAt"]
+            }
+          },
+          {
+            "name": "sortDir",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "asc",
+              "type": "string",
+              "enum": ["asc", "desc"]
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Daftar/cari pelanggan",
+        "tags": ["customers"]
+      },
+      "post": {
+        "operationId": "CustomerController_create",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buat pelanggan (telepon/email dinormalisasi otomatis)",
+        "tags": ["customers"]
+      }
+    },
+    "/customers/merge-candidates": {
+      "get": {
+        "operationId": "CustomerController_candidates",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Daftar kandidat duplikat (default: PENDING)",
+        "tags": ["customers"]
+      }
+    },
+    "/customers/merge-history": {
+      "get": {
+        "operationId": "CustomerController_history",
+        "parameters": [
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Riwayat merge pelanggan",
+        "tags": ["customers"]
+      }
+    },
+    "/customers/{id}": {
+      "get": {
+        "operationId": "CustomerController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detail pelanggan (identitas, alamat, indikator duplikat)",
+        "tags": ["customers"]
+      },
+      "patch": {
+        "operationId": "CustomerController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubah pelanggan",
+        "tags": ["customers"]
+      },
+      "delete": {
+        "operationId": "CustomerController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Arsipkan pelanggan (soft delete)",
+        "tags": ["customers"]
+      }
+    },
+    "/customers/{id}/identities": {
+      "post": {
+        "operationId": "CustomerController_addIdentity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddIdentityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tambah identitas kanal pelanggan",
+        "tags": ["customers"]
+      }
+    },
+    "/customers/identities/{identityId}": {
+      "patch": {
+        "operationId": "CustomerController_updateIdentity",
+        "parameters": [
+          {
+            "name": "identityId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIdentityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubah status verifikasi / primary identitas",
+        "tags": ["customers"]
+      }
+    },
+    "/customers/{id}/addresses": {
+      "post": {
+        "operationId": "CustomerController_addAddress",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tambah alamat pelanggan",
+        "tags": ["customers"]
+      }
+    },
+    "/customers/merge-candidates/{candidateId}": {
+      "patch": {
+        "operationId": "CustomerController_reviewCandidate",
+        "parameters": [
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewCandidateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Review kandidat duplikat (konfirmasi/tolak/abaikan)",
+        "tags": ["customers"]
+      }
+    },
+    "/customers/merge/preview": {
+      "post": {
+        "operationId": "CustomerController_mergePreview",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergePreviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Preview hasil merge dua pelanggan (tanpa mengubah data)",
+        "tags": ["customers"]
+      }
+    },
+    "/customers/merge/execute": {
+      "post": {
+        "operationId": "CustomerController_mergeExecute",
+        "parameters": [
+          {
+            "name": "x-tenant-id",
+            "in": "header",
+            "required": false,
+            "description": "ID tenant aktif (wajib untuk endpoint tenant-scoped)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergeExecuteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Eksekusi merge (atomic, dengan history + audit)",
+        "tags": ["customers"]
+      }
+    },
     "/dashboard/summary": {
       "get": {
         "operationId": "DashboardController_summary",
@@ -945,10 +2644,10 @@
         "type": "object",
         "properties": {
           "refreshToken": {
-            "type": "string"
+            "type": "string",
+            "description": "Opsional untuk klien API; session web memakai cookie httpOnly."
           }
-        },
-        "required": ["refreshToken"]
+        }
       },
       "UpdateTenantDto": {
         "type": "object",
@@ -1076,6 +2775,604 @@
             }
           }
         }
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Minuman"
+          },
+          "slug": {
+            "type": "string",
+            "example": "minuman",
+            "description": "Otomatis dari nama bila kosong"
+          },
+          "parentCategoryId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": ["name"]
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "parentCategoryId": {
+            "type": "object",
+            "description": "null untuk memindah ke root",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "INACTIVE"]
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        }
+      },
+      "CreateVariantDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Kopi Gayo 250g"
+          },
+          "internalSku": {
+            "type": "string",
+            "example": "KOPI-GAYO-250",
+            "description": "SKU internal, unik per tenant"
+          },
+          "barcode": {
+            "type": "string",
+            "example": "8991234567890"
+          },
+          "attributes": {
+            "type": "object",
+            "description": "Atribut variasi, mis. {\"ukuran\":\"250g\"}"
+          },
+          "unit": {
+            "type": "string",
+            "default": "pcs"
+          },
+          "costAmount": {
+            "type": "number",
+            "description": "Harga pokok dalam integer rupiah",
+            "default": 0
+          },
+          "sellingPrice": {
+            "type": "number",
+            "description": "Harga jual dalam integer rupiah",
+            "default": 0
+          },
+          "currency": {
+            "type": "string",
+            "default": "IDR"
+          },
+          "weightGrams": {
+            "type": "number",
+            "description": "Berat dalam gram"
+          },
+          "dimensions": {
+            "type": "object",
+            "description": "Dimensi bebas, mis. {\"p\":10,\"l\":5,\"t\":3}"
+          }
+        },
+        "required": ["name", "internalSku"]
+      },
+      "CreateProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Kopi Arabika Gayo"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Otomatis dari nama bila kosong"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "productType": {
+            "type": "string",
+            "enum": ["PHYSICAL", "SERVICE", "DIGITAL", "BUNDLE"],
+            "default": "PHYSICAL"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "taxCategory": {
+            "type": "string"
+          },
+          "defaultUnit": {
+            "type": "string",
+            "default": "pcs"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Custom field aman (JSON object)"
+          },
+          "variants": {
+            "description": "Variasi awal (opsional)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateVariantDto"
+            }
+          }
+        },
+        "required": ["name"]
+      },
+      "UpdateProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "object",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "productType": {
+            "type": "string",
+            "enum": ["PHYSICAL", "SERVICE", "DIGITAL", "BUNDLE"]
+          },
+          "brand": {
+            "type": "string"
+          },
+          "taxCategory": {
+            "type": "string"
+          },
+          "defaultUnit": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "INACTIVE"]
+          }
+        }
+      },
+      "UpdateVariantDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "barcode": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "costAmount": {
+            "type": "number",
+            "description": "Integer rupiah"
+          },
+          "sellingPrice": {
+            "type": "number",
+            "description": "Integer rupiah"
+          },
+          "weightGrams": {
+            "type": "number"
+          },
+          "dimensions": {
+            "type": "object"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "INACTIVE"]
+          }
+        }
+      },
+      "CreateChannelDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["MANUAL", "POS", "CSV", "MOCK_MARKETPLACE", "WEBSITE", "WHATSAPP_PLACEHOLDER"]
+          },
+          "name": {
+            "type": "string",
+            "example": "Mock Marketplace Utama"
+          },
+          "configuration": {
+            "type": "object",
+            "description": "Metadata non-secret (JANGAN simpan kredensial di sini)"
+          }
+        },
+        "required": ["type", "name"]
+      },
+      "UpdateChannelDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "INACTIVE"]
+          },
+          "configuration": {
+            "type": "object"
+          }
+        }
+      },
+      "ResolveUnmappedDto": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "type": "string"
+          },
+          "externalSkus": {
+            "description": "Daftar external SKU untuk diperiksa",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["channelId", "externalSkus"]
+      },
+      "CreateListingDto": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "type": "string"
+          },
+          "productVariantId": {
+            "type": "string"
+          },
+          "externalSku": {
+            "type": "string",
+            "example": "MKT-SKU-001",
+            "description": "SKU eksternal pada kanal"
+          },
+          "listingName": {
+            "type": "string",
+            "example": "Kopi Gayo 250g — Toko Resmi"
+          },
+          "externalProductId": {
+            "type": "string"
+          },
+          "externalVariantId": {
+            "type": "string"
+          },
+          "channelPrice": {
+            "type": "number",
+            "description": "Harga di kanal (integer rupiah)"
+          },
+          "listingStatus": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "INACTIVE"],
+            "default": "ACTIVE"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        },
+        "required": ["channelId", "productVariantId", "externalSku", "listingName"]
+      },
+      "UpdateListingDto": {
+        "type": "object",
+        "properties": {
+          "externalSku": {
+            "type": "string"
+          },
+          "listingName": {
+            "type": "string"
+          },
+          "productVariantId": {
+            "type": "string",
+            "description": "Pindahkan mapping ke variant lain"
+          },
+          "externalProductId": {
+            "type": "string"
+          },
+          "externalVariantId": {
+            "type": "string"
+          },
+          "channelPrice": {
+            "type": "number",
+            "description": "Integer rupiah"
+          },
+          "listingStatus": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "INACTIVE"]
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      },
+      "CreateCustomerDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["INDIVIDUAL", "BUSINESS"],
+            "default": "INDIVIDUAL"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Budi Santoso"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "primaryPhone": {
+            "type": "string",
+            "example": "081234567890"
+          },
+          "primaryEmail": {
+            "type": "string",
+            "example": "budi@contoh.id"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "consentStatus": {
+            "type": "string",
+            "enum": ["UNKNOWN", "OPTED_IN", "OPTED_OUT"]
+          },
+          "preferredLanguage": {
+            "type": "string",
+            "default": "id"
+          },
+          "preferredChannel": {
+            "type": "string",
+            "example": "whatsapp"
+          }
+        },
+        "required": ["displayName"]
+      },
+      "PatchCustomerDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["INDIVIDUAL", "BUSINESS"]
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "primaryPhone": {
+            "type": "string"
+          },
+          "primaryEmail": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "consentStatus": {
+            "type": "string",
+            "enum": ["UNKNOWN", "OPTED_IN", "OPTED_OUT"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "INACTIVE"]
+          },
+          "preferredLanguage": {
+            "type": "string"
+          },
+          "preferredChannel": {
+            "type": "string"
+          }
+        }
+      },
+      "AddIdentityDto": {
+        "type": "object",
+        "properties": {
+          "identityType": {
+            "type": "string",
+            "enum": ["PHONE", "EMAIL", "MARKETPLACE_ACCOUNT", "WHATSAPP", "MANUAL_REFERENCE"]
+          },
+          "value": {
+            "type": "string",
+            "example": "0812-3456-7890",
+            "description": "Nilai apa adanya; dinormalisasi server"
+          },
+          "channelId": {
+            "type": "string",
+            "description": "Kanal asal (mis. mock marketplace)"
+          },
+          "externalId": {
+            "type": "string",
+            "description": "ID akun eksternal pada kanal"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "default": false
+          },
+          "verificationStatus": {
+            "type": "string",
+            "enum": ["UNVERIFIED", "VERIFIED"],
+            "default": "UNVERIFIED"
+          }
+        },
+        "required": ["identityType", "value"]
+      },
+      "UpdateIdentityDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AddAddressDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "default": "Utama"
+          },
+          "recipientName": {
+            "type": "string",
+            "example": "Budi Santoso"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "addressLine": {
+            "type": "string",
+            "example": "Jl. Melati No. 10 RT 02/RW 05"
+          },
+          "village": {
+            "type": "string"
+          },
+          "district": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string",
+            "example": "Jakarta Pusat"
+          },
+          "province": {
+            "type": "string",
+            "example": "DKI Jakarta"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string",
+            "default": "ID"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": ["recipientName", "addressLine", "city", "province"]
+      },
+      "ReviewCandidateDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["CONFIRMED_DUPLICATE", "REJECTED", "IGNORED"]
+          }
+        },
+        "required": ["status"]
+      },
+      "MergePreviewDto": {
+        "type": "object",
+        "properties": {
+          "targetCustomerId": {
+            "type": "string",
+            "description": "Customer yang dipertahankan (master)"
+          },
+          "sourceCustomerId": {
+            "type": "string",
+            "description": "Customer yang digabungkan (source, akan ditandai MERGED)"
+          },
+          "keepFromSource": {
+            "description": "Field yang diambil dari SOURCE (selain itu nilai target dipertahankan). Contoh: [\"primaryPhone\",\"notes\"]",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["targetCustomerId", "sourceCustomerId"]
+      },
+      "MergeExecuteDto": {
+        "type": "object",
+        "properties": {
+          "targetCustomerId": {
+            "type": "string",
+            "description": "Customer yang dipertahankan (master)"
+          },
+          "sourceCustomerId": {
+            "type": "string",
+            "description": "Customer yang digabungkan (source, akan ditandai MERGED)"
+          },
+          "keepFromSource": {
+            "description": "Field yang diambil dari SOURCE (selain itu nilai target dipertahankan). Contoh: [\"primaryPhone\",\"notes\"]",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "example": "Nomor telepon sama; dikonfirmasi pelanggan yang sama."
+          }
+        },
+        "required": ["targetCustomerId", "sourceCustomerId", "reason"]
       }
     }
   }

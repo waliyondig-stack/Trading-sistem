@@ -15,8 +15,6 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
   user: { id: string; name: string; email: string };
   memberships: { tenantId: string; tenantName: string; roleName: string }[];
 }
@@ -33,12 +31,13 @@ export default function MasukPage() {
   const onSubmit = async (values: LoginForm) => {
     setServerError(null);
     try {
+      // Session diset server sebagai cookie httpOnly; hanya tenant aktif yang disimpan.
       const res = await apiFetch<LoginResponse>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(values),
       });
       const tenantId = res.memberships[0]?.tenantId;
-      session.save(res, tenantId);
+      if (tenantId) session.setTenant(tenantId);
       router.push('/');
     } catch (err) {
       setServerError(

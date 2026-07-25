@@ -2,26 +2,42 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { NAV_ITEMS } from '@/lib/nav';
-import { session } from '@/lib/api';
+import { apiFetch, ApiError, logout, session } from '@/lib/api';
 
-/** Kerangka aplikasi: sidebar (desktop) + bottom sheet nav (mobile). */
+interface MeResponse {
+  user: { id: string; name: string; email: string };
+  memberships: { tenantId: string; tenantName: string; roleName: string; permissions: string[] }[];
+}
+
+/** Kerangka aplikasi: autentikasi via cookie session (ADR-005), sidebar + nav mobile. */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [ready, setReady] = useState(false);
   const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'FlowNiaga';
 
-  useEffect(() => {
-    if (!session.accessToken) {
-      router.replace('/masuk');
-      return;
-    }
-    setReady(true);
-  }, [router]);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => apiFetch<MeResponse>('/auth/me'),
+    retry: false,
+    staleTime: 60_000,
+  });
 
-  if (!ready) {
+  const unauthorized = error instanceof ApiError && error.status === 401;
+
+  useEffect(() => {
+    if (unauthorized) router.replace('/masuk');
+  }, [unauthorized, router]);
+
+  useEffect(() => {
+    if (data && !session.tenantId && data.memberships[0]) {
+      session.setTenant(data.memberships[0].tenantId);
+    }
+  }, [data]);
+
+  if (isLoading || unauthorized) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">
         Memuat…
@@ -29,8 +45,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const logout = () => {
-    session.clear();
+  const doLogout = async () => {
+    await logout();
     router.replace('/masuk');
   };
 
@@ -40,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mb-6 px-2 text-lg font-bold text-slate-900">{appName}</div>
         <nav aria-label="Navigasi utama" className="flex flex-1 flex-col gap-1">
           {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href;
+            const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
@@ -56,18 +72,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <button
-          onClick={logout}
-          className="mt-4 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
-        >
-          Keluar
-        </button>
+        <div className="mt-4 border-t border-slate-100 pt-3">
+          {data && (
+            <p className="mb-2 truncate px-2 text-xs text-slate-400" title={data.user.email}>
+              {data.user.name}
+            </p>
+          )}
+          <button
+            onClick={doLogout}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
+          >
+            Keluar
+          </button>
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:hidden">
           <span className="font-bold">{appName}</span>
-          <button onClick={logout} className="text-sm text-slate-500">
+          <button onClick={doLogout} className="text-sm text-slate-500">
             Keluar
           </button>
         </header>

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { getBrandConfig } from '@flowniaga/config';
@@ -16,10 +17,18 @@ async function bootstrap(): Promise<void> {
   app.useLogger(app.get(Logger));
 
   app.use(helmet());
+  app.use(cookieParser());
   app.enableCors({
     origin: env.corsOrigin.split(',').map((o) => o.trim()),
     credentials: true,
-    allowedHeaders: ['Authorization', 'Content-Type', 'x-tenant-id', 'x-correlation-id'],
+    allowedHeaders: [
+      'Authorization',
+      'Content-Type',
+      'x-tenant-id',
+      'x-correlation-id',
+      'x-csrf-token',
+      'idempotency-key',
+    ],
   });
   app.useGlobalPipes(
     new ValidationPipe({

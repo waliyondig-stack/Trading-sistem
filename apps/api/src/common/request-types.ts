@@ -23,6 +23,8 @@ declare global {
       user?: RequestUser;
       tenantContext?: TenantContext;
       correlationId?: string;
+      /** Sumber autentikasi: 'bearer' (header) atau 'cookie' (session web). */
+      authVia?: 'bearer' | 'cookie';
     }
   }
 }
