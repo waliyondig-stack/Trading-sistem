@@ -1,0 +1,42 @@
+{
+  "name": "flowniaga",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FlowNiaga — AI Business Operating System omnichannel (modular monolith monorepo)",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "msgpackr-extract",
+      "sharp"
+    ]
+  },
+  "scripts": {
+    "build": "pnpm -r --workspace-concurrency=1 run build",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "test:integration": "pnpm --filter @flowniaga/api run test:integration",
+    "db:migrate": "pnpm --filter @flowniaga/api run db:migrate",
+    "db:seed": "pnpm --filter @flowniaga/api run db:seed",
+    "dev:api": "pnpm --filter @flowniaga/api run dev",
+    "dev:web": "pnpm --filter @flowniaga/web run dev",
+    "dev:worker": "pnpm --filter @flowniaga/worker run dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "eslint": "^9.20.0",
+    "eslint-config-prettier": "^10.0.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0"
+  }
+}

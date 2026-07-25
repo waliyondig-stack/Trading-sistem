@@ -1,0 +1,251 @@
+// =====================================================================
+// FlowNiaga — Skema database Fase 1 (Foundation)
+// Cakupan: identitas & akses, organisasi multi-tenant, RBAC, audit,
+// transactional outbox. Modul bisnis (catalog, order, inventory, payment)
+// menyusul pada fase berikutnya — lihat docs/architecture/data-model.md.
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------- Organization & Tenant -------------------------
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model Tenant {
+  id        String       @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String       @unique
+  status    TenantStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
+
+  legalEntities LegalEntity[]
+  branches      Branch[]
+  warehouses    Warehouse[]
+  memberships   Membership[]
+  roles         Role[]
+  auditLogs     AuditLog[]
+  outboxEvents  OutboxEvent[]
+
+  @@index([status])
+}
+
+// Struktur legal entity sudah disiapkan sejak MVP walaupun belum dipakai penuh.
+model LegalEntity {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @db.Uuid
+  name      String
+  taxId     String?
+  isDefault Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  branches Branch[]
+
+  @@index([tenantId])
+}
+
+model Branch {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @db.Uuid
+  legalEntityId String?   @db.Uuid
+  code          String
+  name          String
+  address       String?
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  tenant       Tenant                   @relation(fields: [tenantId], references: [id])
+  legalEntity  LegalEntity?             @relation(fields: [legalEntityId], references: [id])
+  warehouses   Warehouse[]
+  branchAccess MembershipBranchAccess[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model Warehouse {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @db.Uuid
+  branchId  String    @db.Uuid
+  code      String
+  name      String
+  address   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([branchId])
+}
+
+// ------------------------- Identity & Access -------------------------
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique
+  passwordHash String
+  name         String
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  memberships   Membership[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  userAgent String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+  permissions RolePermission[]
+  memberships Membership[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model Permission {
+  code        String @id
+  description String
+
+  roles RolePermission[]
+}
+
+model RolePermission {
+  roleId         String @db.Uuid
+  permissionCode String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionCode], references: [code])
+
+  @@id([roleId, permissionCode])
+}
+
+enum MembershipStatus {
+  ACTIVE
+  DISABLED
+}
+
+model Membership {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @db.Uuid
+  userId      String           @db.Uuid
+  roleId      String           @db.Uuid
+  status      MembershipStatus @default(ACTIVE)
+  // true = akses semua cabang; false = dibatasi lewat MembershipBranchAccess
+  allBranches Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+
+  tenant       Tenant                   @relation(fields: [tenantId], references: [id])
+  user         User                     @relation(fields: [userId], references: [id])
+  role         Role                     @relation(fields: [roleId], references: [id])
+  branchAccess MembershipBranchAccess[]
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+  @@index([tenantId])
+}
+
+model MembershipBranchAccess {
+  membershipId String @db.Uuid
+  branchId     String @db.Uuid
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  branch     Branch     @relation(fields: [branchId], references: [id])
+
+  @@id([membershipId, branchId])
+}
+
+// ------------------------- Audit & Compliance -------------------------
+
+model AuditLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String?  @db.Uuid
+  userId        String?  @db.Uuid
+  action        String // contoh: branch.created, auth.login, access.denied
+  entityType    String
+  entityId      String?
+  before        Json?
+  after         Json?
+  correlationId String?
+  ip            String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType, entityId])
+}
+
+// ------------------------- Transactional Outbox -------------------------
+
+enum OutboxStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+model OutboxEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  tenantId    String?      @db.Uuid
+  eventType   String // contoh: tenant.created, branch.created
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  createdAt   DateTime     @default(now())
+  processedAt DateTime?
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([status, createdAt])
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@flowniaga/domain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kontrak domain bersama: katalog permission, role sistem, tipe bersama",
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo 'no tests' "
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

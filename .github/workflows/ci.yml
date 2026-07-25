@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: flowniaga
+          POSTGRES_PASSWORD: flowniaga
+          POSTGRES_DB: flowniaga
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U flowniaga"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+
+    env:
+      DATABASE_URL: postgresql://flowniaga:flowniaga@localhost:5432/flowniaga?schema=public
+      DATABASE_URL_TEST: postgresql://flowniaga:flowniaga@localhost:5432/flowniaga_test?schema=public
+      REDIS_URL: redis://localhost:6379
+      SEED_DEMO_DATA: 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Siapkan .env untuk skrip dotenv
+        run: cp .env.example .env && sed -i 's#^DATABASE_URL=.*#DATABASE_URL='"$DATABASE_URL"'#' .env
+
+      - name: Buat database test
+        run: |
+          PGPASSWORD=flowniaga psql -h localhost -U flowniaga -d flowniaga -c 'CREATE DATABASE flowniaga_test;'
+
+      - name: Build shared packages
+        run: pnpm --filter @flowniaga/domain --filter @flowniaga/config build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Type-check
+        run: pnpm typecheck
+
+      - name: Migration (dari database kosong)
+        run: pnpm db:migrate
+
+      - name: Seed demo
+        run: pnpm db:seed
+
+      - name: Unit test
+        run: pnpm test
+
+      - name: Integration test
+        run: pnpm test:integration
+
+      - name: Build
+        run: pnpm build
+
+      - name: Dependency audit (informasional)
+        run: pnpm audit --audit-level high || true
