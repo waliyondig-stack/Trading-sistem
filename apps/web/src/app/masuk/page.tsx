@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -105,6 +106,13 @@ export default function MasukPage() {
             {isSubmitting ? 'Memproses…' : 'Masuk'}
           </button>
         </form>
+
+        <p className="mt-4 text-center text-sm text-slate-500">
+          Belum punya akun?{' '}
+          <Link href="/daftar" className="font-medium text-sky-600 hover:underline">
+            Daftar usaha baru
+          </Link>
+        </p>
       </div>
     </main>
   );

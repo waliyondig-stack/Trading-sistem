@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -13,8 +14,14 @@ async function bootstrap(): Promise<void> {
   const env = envConfig();
   const brand = getBrandConfig();
 
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+
+  // Di balik reverse proxy (Render/nginx): percayai X-Forwarded-* agar
+  // req.ip benar dan cookie Secure berfungsi.
+  if (env.nodeEnv === 'production') {
+    app.set('trust proxy', 1);
+  }
 
   app.use(helmet());
   app.use(cookieParser());

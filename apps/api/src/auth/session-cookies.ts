@@ -35,10 +35,10 @@ export function setAuthCookies(
     ...baseOptions(),
     maxAge: ACCESS_MAX_AGE_MS,
   });
-  // Refresh cookie hanya dikirim ke endpoint /auth (memperkecil permukaan serangan).
+  // Refresh cookie hanya dikirim ke endpoint auth (memperkecil permukaan serangan).
   res.cookie(REFRESH_COOKIE, tokens.refreshToken, {
     ...baseOptions(),
-    path: '/auth',
+    path: env.refreshCookiePath,
     maxAge: refreshMaxAgeMs,
   });
   const csrfToken = randomBytes(24).toString('base64url');
@@ -52,6 +52,6 @@ export function setAuthCookies(
 
 export function clearAuthCookies(res: Response): void {
   res.clearCookie(ACCESS_COOKIE, { ...baseOptions() });
-  res.clearCookie(REFRESH_COOKIE, { ...baseOptions(), path: '/auth' });
+  res.clearCookie(REFRESH_COOKIE, { ...baseOptions(), path: envConfig().refreshCookiePath });
   res.clearCookie(CSRF_COOKIE, { ...baseOptions(), httpOnly: false });
 }

@@ -80,18 +80,17 @@ test('duplikat pelanggan terdeteksi dan tampil di halaman kandidat', async ({ pa
   });
 
   await page.goto('/pelanggan/duplikat');
-  await expect(page.getByText(`Pelanggan E2E ${stamp} ⟷ Pelanggan E2E Dup ${stamp}`)).toBeVisible({
-    timeout: 15_000,
-  });
-  await expect(page.getByText('Nomor telepon ternormalisasi sama').first()).toBeVisible();
+  // Urutan pasangan (A ⟷ B) mengikuti sort UUID — cek kartu yang memuat keduanya.
+  const card = page.locator('section', { hasText: `Pelanggan E2E Dup ${stamp}` }).first();
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  await expect(card.getByText(`Pelanggan E2E ${stamp}`, { exact: false }).first()).toBeVisible();
+  await expect(card.getByText('Nomor telepon ternormalisasi sama').first()).toBeVisible();
 });
 
 test('manual merge: preview lalu eksekusi dengan alasan', async ({ page }) => {
   await login(page);
   await page.goto('/pelanggan/duplikat');
-  const candidateCard = page
-    .locator('section', { hasText: `Pelanggan E2E ${stamp} ⟷ Pelanggan E2E Dup ${stamp}` })
-    .first();
+  const candidateCard = page.locator('section', { hasText: `Pelanggan E2E Dup ${stamp}` }).first();
   await candidateCard.getByRole('button', { name: 'Tinjau & Merge' }).click();
 
   await expect(page.getByText('Perbandingan & Merge')).toBeVisible();
