@@ -1,12 +1,14 @@
-# Deploy web (Next.js) ke Netlify — monorepo pnpm.
-# Catatan: jalur deploy-upload Netlify tidak menjalankan build bila `base`
-# diset, jadi build dijalankan dari root repo dengan --filter.
+# FlowNiaga di Netlify: web (Next.js) + API (NestJS sebagai Function) satu site.
+# Jalur deploy-upload Netlify tidak menjalankan build bila `base` diset,
+# jadi build dijalankan dari root repo dengan --filter.
 # Env build (Site configuration → Environment variables):
 #   NEXT_PUBLIC_API_URL=/api/backend
-#   API_PROXY_TARGET=<URL API, mis. https://flowniaga-api-xxx.onrender.com>
 #   NEXT_PUBLIC_APP_NAME=FlowNiaga
+#   DATABASE_URL=<Neon, juga dipakai migrate saat build>
+# Env runtime function: JWT_ACCESS_SECRET, JWT_REFRESH_SECRET,
+#   REFRESH_COOKIE_PATH=/api/backend/auth, NODE_ENV=production (scope functions).
 [build]
-  command = "corepack enable && corepack prepare pnpm@10.33.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @flowniaga/web build"
+  command = "corepack enable && corepack prepare pnpm@10.33.0 --activate && pnpm install --frozen-lockfile && pnpm --filter \"@flowniaga/api...\" run build && (test -n \"$DATABASE_URL\" && pnpm --filter @flowniaga/api exec prisma migrate deploy || echo 'DATABASE_URL kosong — migrate dilewati') && pnpm --filter @flowniaga/web build"
   publish = "apps/web/.next"
 
 [build.environment]
@@ -14,3 +16,15 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# API NestJS berjalan sebagai satu function (netlify/functions/api.js).
+[functions]
+  directory = "netlify/functions"
+  included_files = ["node_modules/.pnpm/**/.prisma/client/**"]
+
+# Semua trafik /api/backend/* masuk ke function API (bukan Next).
+[[redirects]]
+  from = "/api/backend/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true

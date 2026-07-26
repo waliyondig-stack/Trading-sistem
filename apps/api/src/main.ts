@@ -1,50 +1,14 @@
 import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
-import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import cookieParser from 'cookie-parser';
-import helmet from 'helmet';
-import { Logger } from 'nestjs-pino';
 import { getBrandConfig } from '@flowniaga/config';
-import { AppModule } from './app.module';
+import { createConfiguredApp } from './app-setup';
 import { envConfig } from './config/env';
 
 async function bootstrap(): Promise<void> {
   const env = envConfig();
   const brand = getBrandConfig();
 
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
-  app.useLogger(app.get(Logger));
-
-  // Di balik reverse proxy (Render/nginx): percayai X-Forwarded-* agar
-  // req.ip benar dan cookie Secure berfungsi.
-  if (env.nodeEnv === 'production') {
-    app.set('trust proxy', 1);
-  }
-
-  app.use(helmet());
-  app.use(cookieParser());
-  app.enableCors({
-    origin: env.corsOrigin.split(',').map((o) => o.trim()),
-    credentials: true,
-    allowedHeaders: [
-      'Authorization',
-      'Content-Type',
-      'x-tenant-id',
-      'x-correlation-id',
-      'x-csrf-token',
-      'idempotency-key',
-    ],
-  });
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: false },
-    }),
-  );
+  const app = await createConfiguredApp();
   app.enableShutdownHooks();
 
   const swaggerConfig = new DocumentBuilder()
