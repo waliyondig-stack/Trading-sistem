@@ -21,7 +21,9 @@ let cached: EnvConfig | null = null;
 
 export function envConfig(): EnvConfig {
   if (cached) return cached;
-  const nodeEnv = process.env.NODE_ENV ?? 'development';
+  // APP_ENV menimpa NODE_ENV: di Netlify, NODE_ENV=production pada scope build
+  // akan merusak instalasi devDependencies, jadi runtime memakai APP_ENV.
+  const nodeEnv = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'development';
   const accessSecret = process.env.JWT_ACCESS_SECRET;
   const refreshSecret = process.env.JWT_REFRESH_SECRET;
   if (nodeEnv === 'production' && (!accessSecret || !refreshSecret)) {
