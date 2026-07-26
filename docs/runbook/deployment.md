@@ -2,7 +2,7 @@
 
 FlowNiaga terdiri dari 3 proses (api, web, worker) + PostgreSQL + Redis. Web **memproksikan** `/api/backend/*` ke API sehingga browser berbicara same-origin — cookie session httpOnly (ADR-005) berfungsi tanpa konfigurasi cross-site.
 
-> **Tanpa kartu kredit / gratis penuh?** Lihat [deployment-free.md](deployment-free.md) — Neon (PostgreSQL) + Koyeb (API) + Vercel (web), tanpa Redis.
+> **Tanpa kartu kredit / gratis penuh?** Lihat [deployment-free.md](deployment-free.md) — Neon (PostgreSQL) + Render (API) + Netlify/Vercel (web), tanpa Redis.
 
 ## Opsi A — Render (paling mudah, sekali klik)
 
