@@ -1,0 +1,16 @@
+# Deploy web (Next.js) ke Netlify — monorepo pnpm.
+# Catatan: jalur deploy-upload Netlify tidak menjalankan build bila `base`
+# diset, jadi build dijalankan dari root repo dengan --filter.
+# Env build (Site configuration → Environment variables):
+#   NEXT_PUBLIC_API_URL=/api/backend
+#   API_PROXY_TARGET=<URL API, mis. https://flowniaga-api-xxx.onrender.com>
+#   NEXT_PUBLIC_APP_NAME=FlowNiaga
+[build]
+  command = "corepack enable && corepack prepare pnpm@10.33.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @flowniaga/web build"
+  publish = "apps/web/.next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

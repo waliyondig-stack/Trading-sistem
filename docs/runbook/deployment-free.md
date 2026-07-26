@@ -46,7 +46,7 @@ Web perlu di-build dengan env berikut, apa pun platformnya:
 - `API_PROXY_TARGET` = URL API dari Langkah 2
 - `NEXT_PUBLIC_APP_NAME` = `FlowNiaga`
 
-**Netlify:** app.netlify.com → **Add new project → Import an existing project** → repo `flowniaga` → base directory `apps/web` → tambahkan env di **Site configuration → Environment variables** → Deploy.
+**Netlify:** konfigurasi build ada di `netlify.toml` root repo — build dijalankan dari root (`pnpm --filter @flowniaga/web build`, publish `apps/web/.next`, plugin `@netlify/plugin-nextjs`), karena jalur deploy-upload Netlify mengabaikan perintah build bila `base` diset. Tambahkan env di **Site configuration → Environment variables** lalu deploy (import repo dari app.netlify.com, atau upload via Netlify MCP/CLI).
 
 **Vercel:** vercel.com → **Add New → Project** → import repo `flowniaga` → **Root Directory** `apps/web` (monorepo pnpm + Next.js dikenali otomatis) → isi env untuk Production → Deploy.
 
