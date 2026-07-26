@@ -22,6 +22,28 @@ async function getHandler(): Promise<ServerlessHandler> {
 
 /** Entrypoint Netlify Function — instance Nest di-cache antar-invocation. */
 export const handler = async (event: unknown, context: unknown): Promise<unknown> => {
-  const h = await getHandler();
-  return h(event as Parameters<ServerlessHandler>[0], context as Parameters<ServerlessHandler>[1]);
+  try {
+    const h = await getHandler();
+    return await h(
+      event as Parameters<ServerlessHandler>[0],
+      context as Parameters<ServerlessHandler>[1],
+    );
+  } catch (error) {
+    // Tanpa akses log platform, kegagalan bootstrap harus terlihat di response
+    // (stack hanya bila DEBUG_BOOTSTRAP=1 agar tidak bocor di produksi normal).
+    const err = error as Error;
+    console.error('serverless bootstrap/handler error', err);
+    cachedHandler = null;
+    return {
+      statusCode: 500,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        error: {
+          code: 'BOOTSTRAP_ERROR',
+          message: err?.message ?? String(error),
+          stack: process.env.DEBUG_BOOTSTRAP === '1' ? err?.stack : undefined,
+        },
+      }),
+    };
+  }
 };
