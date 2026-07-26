@@ -1,0 +1,6 @@
+product_name,category,variant_name,internal_sku,barcode,cost_amount,selling_price,unit,status
+Kopi Arabika Gayo,Minuman,Kopi Gayo 250g,KOPI-GAYO-250,8991234567001,45000,75000,pcs,ACTIVE
+Kopi Arabika Gayo,Minuman,Kopi Gayo 500g,KOPI-GAYO-500,8991234567002,85000,140000,pcs,ACTIVE
+Teh Melati Premium,Minuman,Teh Melati 100g,TEH-MELATI-100,8991234567003,15000,28000,pcs,ACTIVE
+Gula Aren Bubuk,Bahan Dapur,Gula Aren 500g,GULA-AREN-500,8991234567004,22000,35000,pcs,ACTIVE
+Keripik Singkong Balado,Camilan,Keripik Balado 200g,KRPK-BALADO-200,,9000,18000,pcs,ACTIVE

@@ -1,0 +1,85 @@
+# ============================================================
+# FlowNiaga — deployment production satu host (VPS) via Docker.
+#
+#   1. cp .env.example .env  → isi JWT_ACCESS_SECRET & JWT_REFRESH_SECRET
+#      dengan nilai acak ≥32 karakter (mis. `openssl rand -base64 32`).
+#   2. docker compose -f docker-compose.prod.yml up -d --build
+#   3. Buka http://<host>:3000 → menu "Daftar usaha baru".
+#
+# Web memproksikan /api/backend/* ke API (same-origin) sehingga cookie
+# session httpOnly berfungsi tanpa konfigurasi cross-site (ADR-005).
+# Untuk domain + HTTPS, pasang reverse proxy (Caddy/nginx) di depan web.
+# ============================================================
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flowniaga
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flowniaga}
+      POSTGRES_DB: flowniaga
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U flowniaga']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://flowniaga:${POSTGRES_PASSWORD:-flowniaga}@postgres:5432/flowniaga?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?isi di .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?isi di .env}
+      API_CORS_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      # Cookie refresh mengikuti path yang dilihat browser lewat proxy web.
+      REFRESH_COOKIE_PATH: /api/backend/auth
+    expose:
+      - '3001'
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://flowniaga:${POSTGRES_PASSWORD:-flowniaga}@postgres:5432/flowniaga?schema=public
+      REDIS_URL: redis://redis:6379
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        API_PROXY_TARGET: http://api:3001
+        NEXT_PUBLIC_API_URL: /api/backend
+        NEXT_PUBLIC_APP_NAME: ${APP_NAME:-FlowNiaga}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '3000:3000'
+
+volumes:
+  pgdata_prod:
